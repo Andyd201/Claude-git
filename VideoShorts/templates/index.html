@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>VideoShorts — Génère tes Shorts & Reels en 1 clic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --bg:       #06060f;
+      --surface:  #0d0d1c;
+      --card:     #111124;
+      --border:   #1c1c35;
+      --border-h: #2e2e55;
+      --accent:   #6366f1;
+      --accent2:  #818cf8;
+      --accent-g: rgba(99,102,241,.1);
+      --success:  #10b981;
+      --error:    #ef4444;
+      --text:     #e2e8f0;
+      --text2:    #94a3b8;
+      --text3:    #475569;
+      --tiktok:   #ff2d55;
+      --youtube:  #ff0000;
+      --insta:    #e1306c;
+      --r:        10px;
+      --r-lg:     14px;
+      --shadow:   0 1px 3px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.03);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(6,6,15,.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-mark {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, #4f46e5, var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .brand-name { font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
+    .brand-tag  { font-size: 11px; color: var(--text3); margin-top: 1px; }
+    .header-pills { display: flex; gap: 5px; }
+    .h-pill {
+      font-size: 10px; font-weight: 500;
+      padding: 3px 8px; border-radius: 99px;
+      border: 1px solid var(--border); color: var(--text3);
+    }
+    @media(max-width:600px){ .header-pills { display:none; } }
+
+    /* ── Main layout ── */
+    main { max-width: 860px; margin: 36px auto 80px; padding: 0 24px; }
+
+    /* ── Step labels ── */
+    .step-label {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    }
+    .step-num {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--accent); color: white;
+      font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step-num.done { background: var(--success); }
+    .step-text {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .07em; color: var(--text3);
+    }
+    .section { margin-bottom: 20px; }
+
+    /* ── Drop zone ── */
+    #drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: var(--r-lg);
+      background: var(--surface);
+      padding: 44px 24px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: border-color .2s, background .2s;
+      box-shadow: var(--shadow);
+    }
+    #drop-zone:hover, #drop-zone.drag-over {
+      border-color: var(--accent); background: var(--accent-g);
+    }
+    #file-input {
+      position: absolute; inset: 0; opacity: 0;
+      cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-icon {
+      width: 52px; height: 52px; margin: 0 auto 14px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; font-size: 24px;
+    }
+    .upload-h   { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .upload-sub { font-size: 12px; color: var(--text3); }
+
+    /* File info bar */
+    .file-bar {
+      display: none; align-items: center; gap: 10px;
+      margin-top: 12px; padding: 10px 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); font-size: 12px;
+    }
+    .file-bar.show { display: flex; }
+    .file-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+    #file-name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── Config card ── */
+    .config-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    /* Title row */
+    .title-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 18px; border-bottom: 1px solid var(--border);
+    }
+    .title-row label { font-size: 12px; font-weight: 500; color: var(--text3); white-space: nowrap; }
+    .title-row input {
+      flex: 1; background: transparent; border: none;
+      color: var(--text); font-size: 14px; font-family: inherit; outline: none; min-width: 0;
+    }
+    .title-row input::placeholder { color: var(--text3); }
+    .title-char { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+
+    /* Mode tabs */
+    .mode-tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      flex: 1; padding: 11px 14px;
+      background: transparent; border: none;
+      border-right: 1px solid var(--border);
+      color: var(--text3); font-size: 13px; font-weight: 500;
+      font-family: inherit; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: color .15s, background .15s;
+    }
+    .tab-btn:last-child { border-right: none; }
+    .tab-btn:hover { color: var(--text2); background: var(--card); }
+    .tab-btn.active { color: var(--accent2); background: var(--accent-g); }
+
+    /* Panels */
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .panel-inner { padding: 18px; }
+
+    /* Options grid */
+    .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media(max-width:600px){ .opt-grid { grid-template-columns: 1fr; } }
+
+    .opt-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 12px 14px;
+      transition: border-color .15s;
+    }
+    .opt-box:focus-within { border-color: var(--border-h); }
+    .opt-lbl {
+      font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .07em;
+      color: var(--text3); display: block; margin-bottom: 7px;
+    }
+    .opt-box select, .opt-box input[type="number"] {
+      width: 100%; background: transparent; border: none;
+      color: var(--text); font-size: 13px; font-family: inherit; outline: none;
+    }
+    .opt-box select option { background: #111124; }
+    .opt-hint { font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+    /* Toggle */
+    .tog-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .tog-lbl  { font-size: 13px; color: var(--text2); }
+    .tog { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+    .tog input { opacity: 0; width: 0; height: 0; }
+    .tog-sl {
+      position: absolute; inset: 0;
+      background: var(--border-h); border-radius: 22px;
+      cursor: pointer; transition: background .2s;
+    }
+    .tog-sl::before {
+      content: ''; position: absolute;
+      width: 16px; height: 16px; left: 3px; top: 3px;
+      background: white; border-radius: 50%; transition: transform .2s;
+    }
+    .tog input:checked + .tog-sl { background: var(--accent); }
+    .tog input:checked + .tog-sl::before { transform: translateX(18px); }
+
+    /* Reddit textarea */
+    .story-lbl { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    #story-text {
+      width: 100%; min-height: 155px; max-height: 300px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text);
+      padding: 12px 14px; font-size: 13px; line-height: 1.65;
+      font-family: inherit; outline: none; resize: vertical;
+      transition: border-color .15s;
+    }
+    #story-text:focus { border-color: var(--border-h); }
+    #story-text::placeholder { color: var(--text3); }
+    .story-meta {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--text3); margin-top: 6px;
+    }
+
+    /* Range */
+    input[type="range"] {
+      -webkit-appearance: none; width: 100%;
+      height: 3px; background: var(--border-h);
+      border-radius: 3px; outline: none; padding: 0; border: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px;
+      background: var(--accent2); border-radius: 50%; cursor: pointer;
+    }
+    .range-val { text-align: right; font-size: 11px; color: var(--accent2); margin-top: 4px; }
+
+    /* ── ETA preview ── */
+    #pre-eta {
+      margin-top: 12px; padding: 10px 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); font-size: 12px; color: var(--text2);
+      align-items: center; gap: 6px;
+    }
+
+    /* ── Generate button ── */
+    #start-btn {
+      width: 100%; margin-top: 16px; padding: 13px;
+      background: linear-gradient(135deg, #4f46e5, var(--accent2));
+      border: none; border-radius: var(--r);
+      color: white; font-size: 14px; font-weight: 600; font-family: inherit;
+      cursor: pointer; letter-spacing: .01em;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+    }
+    #start-btn:hover:not(:disabled) {
+      opacity: .92; transform: translateY(-1px);
+      box-shadow: 0 6px 28px rgba(99,102,241,.4);
+    }
+    #start-btn:active:not(:disabled) { transform: translateY(0); }
+    #start-btn:disabled { opacity: .32; cursor: not-allowed; }
+
+    /* ── Error ── */
+    #err-box {
+      display: none; margin-top: 14px; padding: 12px 16px;
+      background: rgba(239,68,68,.07); border: 1px solid rgba(239,68,68,.25);
+      border-radius: var(--r); color: #fca5a5; font-size: 13px; line-height: 1.5;
+    }
+
+    /* ── Reset ── */
+    #reset-btn {
+      display: none; margin-top: 10px;
+      background: none; border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text3);
+      padding: 6px 16px; cursor: pointer;
+      font-size: 12px; font-family: inherit;
+      transition: color .15s, border-color .15s;
+    }
+    #reset-btn:hover { color: var(--text2); border-color: var(--border-h); }
+
+    /* ── Progress ── */
+    #prog-sec {
+      display: none; margin-top: 24px; padding: 22px 24px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-lg); box-shadow: var(--shadow);
+    }
+    #prog-step { font-size: 13px; color: var(--text2); margin-bottom: 12px; min-height: 20px; }
+    .bar-bg { background: var(--card); border-radius: 99px; height: 5px; overflow: hidden; }
+    .bar-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px; transition: width .5s ease;
+      box-shadow: 0 0 10px rgba(99,102,241,.5);
+    }
+    .prog-footer { display: flex; justify-content: space-between; margin-top: 7px; }
+    #prog-eta { font-size: 11px; color: var(--accent2); }
+    #prog-pct { font-size: 11px; color: var(--text3); }
+
+    /* ── Results ── */
+    #res-sec { display: none; margin-top: 36px; }
+    .res-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .res-header h2 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 20px; height: 20px; padding: 0 6px;
+      background: var(--accent); color: white;
+      font-size: 10px; font-weight: 700; border-radius: 99px;
+    }
+    .mode-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px;
+    }
+    .mode-pill.normal  { background: var(--accent-g); color: var(--accent2); border: 1px solid rgba(99,102,241,.2); }
+    .mode-pill.reddit  { background: rgba(249,115,22,.1); color: #fb923c; border: 1px solid rgba(249,115,22,.2); }
+    .mode-pill.visual  { background: rgba(16,185,129,.1); color: #34d399; border: 1px solid rgba(16,185,129,.2); }
+
+    /* Screenshot drop zone */
+    .ss-drop {
+      border: 2px dashed var(--border-h);
+      border-radius: var(--r);
+      padding: 22px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      background: var(--surface);
+      margin-bottom: 14px;
+    }
+    .ss-drop:hover, .ss-drop.over { border-color: #34d399; background: rgba(16,185,129,.05); }
+    .ss-drop input[type=file] { display:none; }
+    .ss-drop .ss-icon { font-size: 28px; margin-bottom: 6px; }
+    .ss-drop .ss-h { font-size: 13px; font-weight: 600; color: var(--text2); }
+    .ss-drop .ss-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+    .ss-preview-wrap { position: relative; display: inline-block; margin-bottom: 14px; }
+    .ss-preview-wrap img { max-height: 160px; max-width: 100%; border-radius: var(--r); border: 1px solid var(--border); display: block; }
+    .ss-remove { position: absolute; top: -8px; right: -8px; background: var(--error); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+    /* Clips grid */
+    .clips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    @media(max-width:600px){ .clips-grid { grid-template-columns: 1fr; } }
+
+    .clip-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 14px;
+      position: relative; box-shadow: var(--shadow);
+      transition: border-color .15s;
+    }
+    .clip-card:hover { border-color: var(--border-h); }
+    .clip-num {
+      position: absolute; top: 10px; right: 10px;
+      background: var(--card); color: var(--text3);
+      font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px;
+    }
+    .clip-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; padding-right: 36px; }
+    .clip-meta  { color: var(--text3); font-size: 11px; margin-bottom: 9px; }
+    .clip-transcript {
+      font-size: 11px; color: var(--text3);
+      background: var(--card); border-radius: 6px;
+      padding: 7px 9px; margin-bottom: 10px;
+      max-height: 48px; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+      line-height: 1.4;
+    }
+    .clip-actions { display: flex; gap: 6px; }
+    .btn-dl {
+      flex: 1; padding: 7px 0; border-radius: var(--r);
+      font-size: 12px; font-weight: 600; font-family: inherit;
+      cursor: pointer; text-decoration: none; text-align: center;
+      display: inline-block; border: none; transition: opacity .15s;
+    }
+    .btn-dl:hover { opacity: .8; }
+    .btn-dl.primary   { background: var(--accent); color: white; }
+    .btn-dl.secondary { background: var(--card); color: var(--text2); border: 1px solid var(--border); }
+
+    #dl-all-btn {
+      width: 100%; padding: 11px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text2);
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: border-color .15s, color .15s;
+    }
+    #dl-all-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    /* ── Captions section ── */
+    #captions-sec {
+      margin-top: 22px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--r-lg);
+      overflow: hidden; box-shadow: var(--shadow);
+    }
+    .cap-header {
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .cap-header h3  { font-size: 14px; font-weight: 700; }
+    .cap-header p   { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+    .plat-tabs { display: flex; border-bottom: 1px solid var(--border); }
+    .plat-tab {
+      flex: 1; padding: 10px 8px;
+      background: transparent; border: none; border-right: 1px solid var(--border);
+      color: var(--text3); font-size: 12px; font-weight: 500; font-family: inherit;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
+      transition: all .15s;
+    }
+    .plat-tab:last-child { border-right: none; }
+    .plat-tab:hover { color: var(--text2); background: var(--card); }
+    .plat-tab.active-tiktok   { background: rgba(255,45,85,.07);  color: var(--tiktok); }
+    .plat-tab.active-youtube  { background: rgba(255,0,0,.07);    color: var(--youtube); }
+    .plat-tab.active-instagram{ background: rgba(225,48,108,.07); color: var(--insta); }
+
+    #plat-info-bar {
+      margin: 12px 16px 0; padding: 8px 12px;
+      border-radius: var(--r); font-size: 12px; display: none;
+    }
+    #plat-info-bar.tiktok    { background: rgba(255,45,85,.07);  border: 1px solid rgba(255,45,85,.2);  color: #ff6080; }
+    #plat-info-bar.youtube   { background: rgba(255,0,0,.07);    border: 1px solid rgba(255,0,0,.2);    color: #ff8080; }
+    #plat-info-bar.instagram { background: rgba(225,48,108,.07); border: 1px solid rgba(225,48,108,.2); color: #e880a0; }
+
+    .cap-clips { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .cap-clip-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+    .cap-clip-header {
+      padding: 8px 12px; border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 600; color: var(--accent2);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .cap-clip-body { padding: 12px; }
+    .cap-meta { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+    .cap-meta-tag {
+      font-size: 10px; padding: 2px 7px; border-radius: 99px;
+      background: var(--surface); border: 1px solid var(--border); color: var(--text3);
+    }
+    textarea.cap-text {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text2);
+      padding: 10px 12px; font-size: 12px; line-height: 1.6;
+      font-family: inherit; resize: vertical; min-height: 100px; outline: none;
+      transition: border-color .15s;
+    }
+    textarea.cap-text:focus { border-color: var(--border-h); }
+    .cap-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .btn-copy {
+      padding: 6px 14px; background: transparent;
+      border: 1px solid var(--border); border-radius: var(--r);
+      color: var(--text3); font-size: 12px; font-family: inherit;
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-copy:hover  { border-color: var(--border-h); color: var(--text2); }
+    .btn-copy.copied { background: rgba(16,185,129,.08); border-color: rgba(16,185,129,.3); color: #34d399; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border); margin-top: 60px;
+      padding: 18px 24px; text-align: center;
+      font-size: 11px; color: var(--text3);
+    }
+    footer span { color: var(--text3); }
+
+    /* ════════════════════════════════════════
+       Subtitle Preview — phone mockup
+    ════════════════════════════════════════ */
+    #preview-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .preview-header {
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .preview-header h3 { font-size: 13px; font-weight: 600; }
+    .preview-header span { font-size: 11px; color: var(--text3); }
+    .preview-body {
+      display: flex; gap: 22px; padding: 18px;
+      align-items: flex-start; flex-wrap: wrap;
+    }
+
+    /* Phone shell */
+    .preview-phone {
+      flex-shrink: 0;
+      width: 180px; height: 320px;
+      border-radius: 26px;
+      border: 3px solid #2a2a45;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 0 6px var(--card), 0 12px 36px rgba(0,0,0,.7),
+                  inset 0 0 0 1px rgba(255,255,255,.04);
+      cursor: crosshair;
+    }
+    /* Notch */
+    .preview-phone::before {
+      content: '';
+      position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+      width: 46px; height: 8px;
+      background: #111124; border-radius: 99px; z-index: 30;
+    }
+    /* Home indicator */
+    .preview-phone::after {
+      content: '';
+      position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+      width: 42px; height: 3px;
+      background: rgba(255,255,255,.25); border-radius: 99px; z-index: 30;
+    }
+    .phone-screen {
+      width: 100%; height: 100%;
+      background: linear-gradient(160deg, #0a0a1a 0%, #13132a 60%, #0d0d1c 100%);
+      position: relative; overflow: hidden;
+    }
+    /* Subtle grid texture */
+    .phone-screen::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(99,102,241,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,102,241,.04) 1px, transparent 1px);
+      background-size: 18px 18px;
+      z-index: 1;
+    }
+
+    /* Platform overlay container */
+    .plat-overlay { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+
+    /* Draggable subtitle */
+    #sub-ph {
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      z-index: 20;
+      white-space: nowrap;
+      cursor: grab;
+      user-select: none;
+      font-family: Arial, sans-serif;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: .01em;
+      color: #fff;
+      padding: 0 4px;
+    }
+    #sub-ph:active { cursor: grabbing; }
+
+    /* Controls panel */
+    .preview-controls {
+      flex: 1; min-width: 180px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .ctrl-group { }
+    .ctrl-label {
+      font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .07em;
+      color: var(--text3); display: block; margin-bottom: 8px;
+    }
+
+    /* Preview platform tabs */
+    .prev-plat-tabs { display: flex; gap: 5px; }
+    .prev-plat-btn {
+      flex: 1; padding: 6px 4px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text3);
+      font-size: 10px; font-weight: 500; font-family: inherit;
+      cursor: pointer; text-align: center; transition: all .15s;
+    }
+    .prev-plat-btn:hover { border-color: var(--border-h); color: var(--text2); }
+    .prev-plat-btn.active { border-color: var(--accent); color: var(--accent2); background: var(--accent-g); }
+
+    /* Position presets */
+    .pos-presets { display: flex; gap: 6px; }
+    .pos-btn {
+      flex: 1; padding: 7px 4px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text3);
+      font-size: 11px; font-weight: 500; font-family: inherit;
+      cursor: pointer; text-align: center; transition: all .15s;
+    }
+    .pos-btn:hover { border-color: var(--border-h); color: var(--text2); }
+    .pos-btn.active { border-color: var(--accent); color: var(--accent2); background: var(--accent-g); }
+
+    /* Color swatches */
+    .color-swatches { display: flex; gap: 7px; flex-wrap: wrap; }
+    .color-swatch {
+      width: 30px; height: 30px; border-radius: 8px;
+      cursor: pointer; border: 2px solid transparent;
+      transition: transform .15s, border-color .15s, box-shadow .15s;
+    }
+    .color-swatch:hover { transform: scale(1.12); }
+    .color-swatch.selected {
+      border-color: white; transform: scale(1.08);
+      box-shadow: 0 0 8px currentColor;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">✂️</div>
+    <div>
+      <div class="brand-name">VideoShorts</div>
+      <div class="brand-tag">Découpe · Whisper · Shorts / Reels / TikTok</div>
+    </div>
+  </div>
+  <div class="header-pills">
+    <span class="h-pill">TikTok</span>
+    <span class="h-pill">YouTube Shorts</span>
+    <span class="h-pill">Instagram Reels</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Step 1 : Upload ── -->
+  <div class="section">
+    <div class="step-label">
+      <div class="step-num">1</div>
+      <span class="step-text">Sélectionne ta vidéo</span>
+    </div>
+
+    <div id="drop-zone">
+      <input type="file" id="file-input" accept="video/*"/>
+      <div class="upload-icon">🎬</div>
+      <div class="upload-h">Glisse ta vidéo ici</div>
+      <div class="upload-sub">MP4 · MOV · MKV · AVI · ou clique pour sélectionner</div>
+    </div>
+
+    <div class="file-bar" id="file-bar">
+      <div class="file-dot"></div>
+      <span id="file-name"></span>
+    </div>
+  </div>
+
+  <!-- ── Step 2 : Configure ── -->
+  <div class="section">
+    <div class="step-label">
+      <div class="step-num">2</div>
+      <span class="step-text">Configure</span>
+    </div>
+
+    <div class="config-card">
+
+      <!-- Title -->
+      <div class="title-row">
+        <label for="video-title">Titre</label>
+        <input type="text" id="video-title" maxlength="100"
+               placeholder="Titre de ta vidéo (optionnel — utilisé dans les captions)"/>
+        <span class="title-char"><span id="title-len">0</span>/100</span>
+      </div>
+
+      <!-- Mode tabs -->
+      <div class="mode-tabs">
+        <button class="tab-btn active" data-tab="normal">🎙️ Mode Normal</button>
+        <button class="tab-btn" data-tab="reddit">📱 Reddit Story</button>
+        <button class="tab-btn" data-tab="visual">📸 Reddit Visuel</button>
+      </div>
+
+      <!-- Panel : Normal -->
+      <div class="panel active" id="panel-normal">
+        <div class="panel-inner">
+          <div class="opt-grid">
+            <div class="opt-box">
+              <span class="opt-lbl">Durée min. par clip</span>
+              <input type="number" id="opt-min" value="20" min="5" max="120"/>
+              <div class="opt-hint">secondes</div>
+            </div>
+            <div class="opt-box">
+              <span class="opt-lbl">Durée max. par clip</span>
+              <input type="number" id="opt-max" value="90" min="10" max="300"/>
+              <div class="opt-hint">secondes</div>
+            </div>
+            <div class="opt-box">
+              <span class="opt-lbl">Langue de la vidéo</span>
+              <select id="opt-lang">
+                <option value="">Détection automatique</option>
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+                <option value="pt">Português</option>
+              </select>
+            </div>
+            <div class="opt-box">
+              <span class="opt-lbl">Format de sortie</span>
+              <div class="tog-row">
+                <span class="tog-lbl">📱 Vertical 9:16</span>
+                <label class="tog">
+                  <input type="checkbox" id="opt-vertical" checked/>
+                  <span class="tog-sl"></span>
+                </label>
+              </div>
+            </div>
+            <div class="opt-box">
+              <span class="opt-lbl">Recadrage 9:16</span>
+              <div class="tog-row">
+                <span class="tog-lbl">🔍 Zoom (rogner)</span>
+                <label class="tog">
+                  <input type="checkbox" id="opt-zoom"/>
+                  <span class="tog-sl"></span>
+                </label>
+              </div>
+              <div class="opt-hint">Off = bandes noires · On = zoom rogné</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel : Reddit -->
+      <div class="panel" id="panel-reddit">
+        <div class="panel-inner">
+          <div class="reddit-area" style="margin-bottom:14px;">
+            <div class="story-lbl">
+              <span class="opt-lbl" style="margin:0;">Histoire Reddit</span>
+            </div>
+            <textarea id="story-text"
+              placeholder="Colle ton post Reddit ici…&#10;&#10;La voix IA lira ce texte sur ta vidéo avec des sous-titres synchronisés mot par mot."></textarea>
+            <div class="story-meta">
+              <span id="word-count">0 mots</span>
+              <span id="parts-estimate">→ ~0 partie(s)</span>
+            </div>
+          </div>
+
+          <div class="opt-grid">
+            <div class="opt-box">
+              <span class="opt-lbl">Voix IA (TTS)</span>
+              <select id="opt-voice">
+                <optgroup label="🇫🇷 Français">
+                  <option value="fr-FR-HenriNeural">Henri — homme</option>
+                  <option value="fr-FR-DeniseNeural">Denise — femme</option>
+                </optgroup>
+                <optgroup label="🇬🇧 English">
+                  <option value="en-US-GuyNeural">Guy — US homme</option>
+                  <option value="en-US-JennyNeural">Jenny — US femme</option>
+                  <option value="en-GB-RyanNeural">Ryan — UK homme</option>
+                  <option value="en-AU-NatashaNeural">Natasha — AU femme</option>
+                </optgroup>
+                <optgroup label="🇪🇸 Español">
+                  <option value="es-ES-AlvaroNeural">Álvaro — homme</option>
+                </optgroup>
+                <optgroup label="🇧🇷 Português">
+                  <option value="pt-BR-AntonioNeural">Antonio — homme</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="opt-box">
+              <span class="opt-lbl">Audio original</span>
+              <div class="tog-row">
+                <span class="tog-lbl">Couper le son</span>
+                <label class="tog">
+                  <input type="checkbox" id="opt-mute" checked/>
+                  <span class="tog-sl"></span>
+                </label>
+              </div>
+              <div class="opt-hint" style="margin-top:8px;">Remplacé par la voix IA</div>
+            </div>
+            <div class="opt-box" style="grid-column:1/-1">
+              <span class="opt-lbl">Mots par partie</span>
+              <input type="range" id="opt-wpc" min="80" max="280" value="160" step="20"/>
+              <div class="range-val"><span id="wpc-val">160</span> mots · ~60–90 s par clip</div>
+            </div>
+            <div class="opt-box">
+              <span class="opt-lbl">Format de sortie</span>
+              <div class="tog-row">
+                <span class="tog-lbl">📱 Vertical 9:16</span>
+                <label class="tog">
+                  <input type="checkbox" id="opt-vertical-r" checked/>
+                  <span class="tog-sl"></span>
+                </label>
+              </div>
+            </div>
+            <div class="opt-box">
+              <span class="opt-lbl">Recadrage 9:16</span>
+              <div class="tog-row">
+                <span class="tog-lbl">🔍 Zoom (rogner)</span>
+                <label class="tog">
+                  <input type="checkbox" id="opt-zoom-r"/>
+                  <span class="tog-sl"></span>
+                </label>
+              </div>
+              <div class="opt-hint">Off = bandes noires · On = zoom rogné</div>
+            </div>
+            <div class="opt-box" style="grid-column:1/-1">
+              <span class="opt-lbl">Réactions automatiques 🤖</span>
+              <div class="tog-row">
+                <span class="tog-lbl">Ajouter "Faah!" aux moments forts</span>
+                <label class="tog">
+                  <input type="checkbox" id="opt-reactions" checked/>
+                  <span class="tog-sl"></span>
+                </label>
+              </div>
+              <div class="opt-hint">L'IA détecte les passages choquants et insère une réaction vocale</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Panel : Reddit Visuel -->
+      <div class="panel" id="panel-visual">
+        <div class="panel-inner">
+
+          <!-- Screenshot drop zone -->
+          <div class="ss-drop" id="ss-drop">
+            <input type="file" id="ss-input" accept="image/*"/>
+            <div class="ss-icon">🖼️</div>
+            <div class="ss-h">Screenshot du post Reddit</div>
+            <div class="ss-sub">PNG · JPG — glisse ou clique pour sélectionner</div>
+          </div>
+          <div id="ss-preview-wrap" class="ss-preview-wrap" style="display:none;">
+            <img id="ss-preview-img" src="" alt="Screenshot"/>
+            <button class="ss-remove" id="ss-remove-btn" title="Supprimer">✕</button>
+          </div>
+
+          <div class="reddit-area" style="margin-bottom:14px;">
+            <div class="story-lbl">
+              <span class="opt-lbl" style="margin:0;">Histoire à raconter</span>
+            </div>
+            <textarea id="vis-story-text"
+              placeholder="Colle le texte de ton histoire ici…&#10;&#10;La voix IA lit le texte, le card animé dévoile progressivement chaque phrase sur la vidéo en arrière-plan."></textarea>
+            <div class="story-meta">
+              <span id="vis-word-count">0 mots</span>
+              <span id="vis-parts-estimate">→ ~0 partie(s)</span>
+            </div>
+          </div>
+
+          <div class="opt-grid">
+            <div class="opt-box">
+              <span class="opt-lbl">Voix IA (TTS)</span>
+              <select id="vis-opt-voice">
+                <optgroup label="🇫🇷 Français">
+                  <option value="fr-FR-HenriNeural">Henri — homme</option>
+                  <option value="fr-FR-DeniseNeural">Denise — femme</option>
+                </optgroup>
+                <optgroup label="🇬🇧 English">
+                  <option value="en-US-GuyNeural">Guy — US homme</option>
+                  <option value="en-US-JennyNeural">Jenny — US femme</option>
+                  <option value="en-GB-RyanNeural">Ryan — UK homme</option>
+                  <option value="en-AU-NatashaNeural">Natasha — AU femme</option>
+                </optgroup>
+                <optgroup label="🇪🇸 Español">
+                  <option value="es-ES-AlvaroNeural">Álvaro — homme</option>
+                </optgroup>
+                <optgroup label="🇧🇷 Português">
+                  <option value="pt-BR-AntonioNeural">Antonio — homme</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="opt-box">
+              <span class="opt-lbl">Recadrage 9:16</span>
+              <div class="tog-row">
+                <span class="tog-lbl">🔍 Zoom (rogner)</span>
+                <label class="tog">
+                  <input type="checkbox" id="vis-opt-zoom"/>
+                  <span class="tog-sl"></span>
+                </label>
+              </div>
+              <div class="opt-hint">Off = bandes noires · On = zoom rogné</div>
+            </div>
+            <div class="opt-box" style="grid-column:1/-1">
+              <span class="opt-lbl">Mots par partie</span>
+              <input type="range" id="vis-opt-wpc" min="80" max="280" value="160" step="20"/>
+              <div class="range-val"><span id="vis-wpc-val">160</span> mots · ~60–90 s par clip</div>
+            </div>
+            <div class="opt-box" style="grid-column:1/-1">
+              <span class="opt-lbl">Réactions automatiques 🤖</span>
+              <div class="tog-row">
+                <span class="tog-lbl">Ajouter "Faah!" aux moments forts</span>
+                <label class="tog">
+                  <input type="checkbox" id="vis-opt-reactions" checked/>
+                  <span class="tog-sl"></span>
+                </label>
+              </div>
+              <div class="opt-hint">L'IA détecte les passages choquants et insère une réaction vocale</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /config-card -->
+  </div><!-- /section -->
+
+  <!-- ── Step 2.5 : Subtitle Preview ── -->
+  <div class="section">
+    <div class="step-label">
+      <div class="step-num">2</div>
+      <span class="step-text">Prévisualise tes sous-titres</span>
+    </div>
+    <div id="preview-card">
+      <div class="preview-header">
+        <h3>🎨 Aperçu interactif</h3>
+        <span>Glisse le texte · ajuste la taille · choisis la couleur</span>
+      </div>
+      <div class="preview-body">
+
+        <!-- Phone mockup -->
+        <div style="flex-shrink:0;">
+          <div class="preview-phone" id="preview-phone">
+            <div class="phone-screen" id="phone-screen">
+              <div id="ov-tiktok"    class="plat-overlay"></div>
+              <div id="ov-youtube"   class="plat-overlay" style="display:none;"></div>
+              <div id="ov-instagram" class="plat-overlay" style="display:none;"></div>
+              <div id="sub-ph">Exemple de sous-titre</div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3);">
+            ☝️ Glisse le texte pour le repositionner
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="preview-controls">
+
+          <!-- Platform -->
+          <div class="ctrl-group">
+            <span class="ctrl-label">Plateforme</span>
+            <div class="prev-plat-tabs">
+              <button class="prev-plat-btn active" data-prev-plat="tiktok">🎵 TikTok</button>
+              <button class="prev-plat-btn" data-prev-plat="youtube">▶️ Shorts</button>
+              <button class="prev-plat-btn" data-prev-plat="instagram">📸 Reels</button>
+            </div>
+          </div>
+
+          <!-- Font size -->
+          <div class="ctrl-group">
+            <span class="ctrl-label">Taille du texte — <span id="fs-val">30</span> pt</span>
+            <input type="range" id="ctrl-fs" min="16" max="80" value="30" step="2"/>
+          </div>
+
+          <!-- Y position -->
+          <div class="ctrl-group">
+            <span class="ctrl-label">Position</span>
+            <div class="pos-presets">
+              <button class="pos-btn" data-yp="15">⬆ Haut</button>
+              <button class="pos-btn" data-yp="50">◉ Centre</button>
+              <button class="pos-btn active" data-yp="85">⬇ Bas</button>
+            </div>
+          </div>
+
+          <!-- Neon color -->
+          <div class="ctrl-group">
+            <span class="ctrl-label">Couleur néon</span>
+            <div class="color-swatches">
+              <div class="color-swatch selected" data-hex="#FF00FF" style="background:#FF00FF;" title="Magenta"></div>
+              <div class="color-swatch"          data-hex="#00FFFF" style="background:#00FFFF;" title="Cyan"></div>
+              <div class="color-swatch"          data-hex="#00FF88" style="background:#00FF88;" title="Vert"></div>
+              <div class="color-swatch"          data-hex="#FF8800" style="background:#FF8800;" title="Orange"></div>
+              <div class="color-swatch"          data-hex="#FF44CC" style="background:#FF44CC;" title="Rose"></div>
+              <div class="color-swatch"          data-hex="#FFFFFF" style="background:#fff;box-shadow:inset 0 0 0 1px #444;" title="Blanc"></div>
+            </div>
+          </div>
+
+          <!-- Live values info -->
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;font-size:10px;color:var(--text3);line-height:1.7;">
+            <div>Taille : <span id="info-fs" style="color:var(--accent2)">30 pt</span></div>
+            <div>Position Y : <span id="info-yp" style="color:var(--accent2)">85%</span></div>
+            <div>Couleur : <span id="info-clr" style="color:var(--accent2)">#FF00FF</span></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETA preview -->
+  <div id="pre-eta" style="display:none;">
+    ⏱ <span id="pre-eta-text"></span>
+  </div>
+
+  <!-- Generate -->
+  <button id="start-btn" disabled>🚀 Générer les Shorts</button>
+
+  <!-- Error -->
+  <div id="err-box"></div>
+  <button id="reset-btn">↩ Recommencer</button>
+
+  <!-- Progress -->
+  <div id="prog-sec">
+    <div id="prog-step">Initialisation…</div>
+    <div class="bar-bg"><div class="bar-fill" id="bar-fill"></div></div>
+    <div class="prog-footer">
+      <span id="prog-eta"></span>
+      <span id="prog-pct">0%</span>
+    </div>
+  </div>
+
+  <!-- ── Step 3 : Results ── -->
+  <div id="res-sec">
+    <div class="step-label" style="margin-top:8px;">
+      <div class="step-num done">3</div>
+      <span class="step-text">Télécharge tes clips</span>
+    </div>
+
+    <div class="res-header">
+      <h2>
+        <span id="res-pill" class="mode-pill normal">Mode Normal</span>
+        <span id="clip-count" class="badge">0</span> clip(s) prêt(s)
+      </h2>
+    </div>
+
+    <div class="clips-grid" id="clips-grid"></div>
+    <button id="dl-all-btn">⬇️ Tout télécharger (ZIP)</button>
+
+    <!-- Captions -->
+    <div id="captions-sec">
+      <div class="cap-header">
+        <div>
+          <h3>📋 Captions &amp; Hashtags</h3>
+          <p>Prêt à copier — adapté aux règles de chaque plateforme</p>
+        </div>
+      </div>
+      <div class="plat-tabs">
+        <button class="plat-tab active-tiktok" data-plat="tiktok">🎵 TikTok</button>
+        <button class="plat-tab" data-plat="youtube">▶️ YouTube Shorts</button>
+        <button class="plat-tab" data-plat="instagram">📸 Instagram</button>
+      </div>
+      <div id="plat-info-bar" class="plat-info tiktok"></div>
+      <div class="cap-clips" id="cap-clips-container"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <span>VideoShorts v1.6 — Local · Whisper AI · edge-tts · ffmpeg · PIL</span>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
