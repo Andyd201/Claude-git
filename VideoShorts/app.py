@@ -1123,8 +1123,24 @@ def process_video_job(job_id: str, video_path: Path, opts: dict):
 #  Routes Flask
 # ══════════════════════════════════════════════
 
+DIST_DIR = BASE_DIR / "static" / "dist"
+
 @app.route("/")
 def index():
+    dist_index = DIST_DIR / "index.html"
+    if dist_index.exists():
+        return send_file(str(dist_index))
+    return render_template("index.html")
+
+@app.route("/<path:path>")
+def spa_catch(path):
+    """Serve React static assets; fall back to index.html for SPA routes."""
+    asset = DIST_DIR / path
+    if asset.exists() and asset.is_file():
+        return send_file(str(asset))
+    dist_index = DIST_DIR / "index.html"
+    if dist_index.exists():
+        return send_file(str(dist_index))
     return render_template("index.html")
 
 

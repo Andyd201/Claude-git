@@ -1,4 +1,28 @@
-.mov
-.mp4
-.srt
-.ass
+# Fichiers vidéo/sous-titres
+*.mov
+*.mp4
+*.srt
+*.ass
+
+# Frontend
+VideoShorts/frontend/node_modules/
+VideoShorts/frontend/dist/
+
+# Build React (servi par Flask)
+VideoShorts/static/dist/
+
+# Uploads & outputs temporaires
+VideoShorts/uploads/
+VideoShorts/outputs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
