@@ -1,6 +1,6 @@
-import { Download, Copy, Check, FileText } from 'lucide-react';
+import { Download, Copy, Check, FileText, Package } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Clip } from '../App';
 
 interface ExportResultsProps {
@@ -33,9 +33,37 @@ function fmtDur(s: number): string {
   return m > 0 ? `${m}m${sc.toString().padStart(2, '0')}s` : `${sc}s`;
 }
 
+function VideoThumbnail({ jobId, filename, label }: { jobId: string; filename: string; label: string }) {
+  const [hasError, setHasError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  if (hasError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-2xl font-bold text-white/40">{label}</div>
+      </div>
+    );
+  }
+
+  return (
+    <video
+      ref={videoRef}
+      src={`/stream/${jobId}/${filename}`}
+      className="absolute inset-0 w-full h-full object-cover"
+      muted
+      preload="metadata"
+      onError={() => setHasError(true)}
+      onLoadedMetadata={() => {
+        if (videoRef.current) videoRef.current.currentTime = 1;
+      }}
+    />
+  );
+}
+
 export function ExportResults({ clips, jobId, activeMode }: ExportResultsProps) {
   const [activePlat, setActivePlat] = useState<'tiktok' | 'youtube' | 'instagram'>('tiktok');
   const [copied, setCopied] = useState<number | null>(null);
+  const [zipping, setZipping] = useState(false);
 
   const isReddit = activeMode === 'reddit-tts' || activeMode === 'reddit-visual';
   const clipLabel = isReddit ? 'Partie' : 'Clip';
@@ -47,67 +75,103 @@ export function ExportResults({ clips, jobId, activeMode }: ExportResultsProps) 
     setTimeout(() => setCopied(null), 2200);
   };
 
+  const handleDownloadAll = async () => {
+    setZipping(true);
+    try {
+      const a = document.createElement('a');
+      a.href = `/zip/${jobId}`;
+      a.download = `videoshorts_${jobId.slice(0, 8)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      setTimeout(() => setZipping(false), 1500);
+    }
+  };
+
   return (
     <div className="space-y-8">
-      {/* Clips grid */}
-      <div>
-        <h3 className="text-sm font-semibold text-white mb-4">
+      {/* Header + Download All */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-white">
           {clips.length} {clipLabel}(s) générée(s)
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {clips.map((clip, idx) => (
-            <motion.div
-              key={clip.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.08 }}
-              className="bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-cyan-500/30 transition-all group"
-            >
-              {/* Thumbnail */}
-              <div className="aspect-[9/16] bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/20 flex items-center justify-center relative overflow-hidden">
-                <div className="text-2xl font-bold text-white/40">{clipLabel} #{clip.id}</div>
-                <div className="absolute top-2 right-2 px-2 py-1 bg-black/80 text-white text-xs rounded-lg backdrop-blur-sm">
-                  {fmtDur(clip.duration)}
-                </div>
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <a
-                    href={`/download/${jobId}/${clip.filename}`}
-                    download={clip.filename}
-                    className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center hover:bg-white transition-all"
-                  >
-                    <Download className="w-5 h-5 text-black" />
-                  </a>
-                </div>
+        {clips.length > 1 && (
+          <motion.button
+            onClick={handleDownloadAll}
+            disabled={zipping}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all
+              ${zipping
+                ? 'bg-white/5 text-gray-500 cursor-wait'
+                : 'bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 border border-cyan-500/30 text-cyan-400 hover:from-cyan-500/30 hover:to-fuchsia-500/30'
+              }`}
+          >
+            <Package className="w-4 h-4" />
+            {zipping ? 'Préparation…' : `Tout télécharger (.zip)`}
+          </motion.button>
+        )}
+      </div>
+
+      {/* Clips grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {clips.map((clip, idx) => (
+          <motion.div
+            key={clip.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.08 }}
+            className="bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-cyan-500/30 transition-all group"
+          >
+            {/* Thumbnail with actual video */}
+            <div className="aspect-[9/16] bg-gradient-to-br from-cyan-500/10 to-fuchsia-500/10 flex items-center justify-center relative overflow-hidden">
+              <VideoThumbnail jobId={jobId} filename={clip.filename} label={`${clipLabel} #${clip.id}`} />
+
+              <div className="absolute top-2 right-2 px-2 py-1 bg-black/80 text-white text-xs rounded-lg backdrop-blur-sm z-10">
+                {fmtDur(clip.duration)}
               </div>
 
-              <div className="p-4">
-                <h4 className="text-sm font-medium text-white mb-1 truncate">{clip.name}</h4>
-                <p className="text-xs text-gray-400 mb-1">⏱ {fmtDur(clip.duration)}</p>
-                {clip.transcript && (
-                  <p className="text-xs text-gray-500 line-clamp-2 mb-3">{clip.transcript}</p>
-                )}
-                <div className="space-y-2">
-                  <a
-                    href={`/download/${jobId}/${clip.filename}`}
-                    download={clip.filename}
-                    className="w-full px-3 py-2 bg-gradient-to-r from-cyan-500 to-fuchsia-600 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-cyan-500/30 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download MP4
-                  </a>
-                  <a
-                    href={`/download/${jobId}/${clip.srt_filename}`}
-                    download={clip.srt_filename}
-                    className="w-full px-3 py-1.5 bg-white/5 text-gray-300 rounded-lg text-xs hover:bg-white/10 transition-all flex items-center justify-center gap-2"
-                  >
-                    <FileText className="w-3 h-3" />
-                    Download SRT
-                  </a>
-                </div>
+              {/* Hover overlay with download */}
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
+                <a
+                  href={`/download/${jobId}/${clip.filename}`}
+                  download={clip.filename}
+                  className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center hover:bg-white transition-all"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Download className="w-5 h-5 text-black" />
+                </a>
               </div>
-            </motion.div>
-          ))}
-        </div>
+            </div>
+
+            <div className="p-4">
+              <h4 className="text-sm font-medium text-white mb-1 truncate">{clip.name}</h4>
+              <p className="text-xs text-gray-400 mb-1">⏱ {fmtDur(clip.duration)}</p>
+              {clip.transcript && (
+                <p className="text-xs text-gray-500 line-clamp-2 mb-3">{clip.transcript}</p>
+              )}
+              <div className="space-y-2">
+                <a
+                  href={`/download/${jobId}/${clip.filename}`}
+                  download={clip.filename}
+                  className="w-full px-3 py-2 bg-gradient-to-r from-cyan-500 to-fuchsia-600 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-cyan-500/30 transition-all flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download MP4
+                </a>
+                <a
+                  href={`/download/${jobId}/${clip.srt_filename}`}
+                  download={clip.srt_filename}
+                  className="w-full px-3 py-1.5 bg-white/5 text-gray-300 rounded-lg text-xs hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                >
+                  <FileText className="w-3 h-3" />
+                  Download SRT
+                </a>
+              </div>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Captions */}

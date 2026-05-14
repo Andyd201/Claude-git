@@ -5,7 +5,7 @@ Patch 6 : Reddit Visuel — card animé avec reveal progressif du texte
 """
 
 from flask import Flask, render_template, request, jsonify, send_file
-import os, subprocess, json, threading, uuid, re, asyncio, time, shutil, random
+import os, subprocess, json, threading, uuid, re, asyncio, time, shutil, random, zipfile, io as _io
 from pathlib import Path
 
 app = Flask(__name__)
@@ -1144,6 +1144,39 @@ def spa_catch(path):
     return render_template("index.html")
 
 
+@app.route("/zip/<job_id>")
+def download_zip(job_id):
+    """Télécharge tous les clips MP4 d'un job dans un fichier ZIP."""
+    out_dir = OUTPUT_FOLDER / job_id
+    if not out_dir.exists():
+        return jsonify({"error": "Job introuvable"}), 404
+
+    buf = _io.BytesIO()
+    files_added = 0
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for f in sorted(out_dir.iterdir()):
+            if f.suffix.lower() == ".mp4" and "_final" in f.name:
+                zf.write(str(f), f.name)
+                files_added += 1
+
+    if files_added == 0:
+        return jsonify({"error": "Aucun clip trouvé"}), 404
+
+    buf.seek(0)
+    return send_file(buf, as_attachment=True,
+                     download_name=f"videoshorts_{job_id[:8]}.zip",
+                     mimetype="application/zip")
+
+
+@app.route("/stream/<job_id>/<filename>")
+def stream_video(job_id, filename):
+    """Diffuse un clip vidéo sans forcer le téléchargement (pour la prévisualisation)."""
+    fp = OUTPUT_FOLDER / job_id / Path(filename).name
+    if not fp.exists():
+        return jsonify({"error": f"Fichier introuvable: {filename}"}), 404
+    return send_file(str(fp), mimetype="video/mp4")
+
+
 @app.route("/upload", methods=["POST"])
 def upload():
     if "video" not in request.files:
@@ -1156,6 +1189,11 @@ def upload():
     ext    = Path(f.filename).suffix.lower() or ".mp4"
     vpath  = UPLOAD_FOLDER / f"{job_id}{ext}"
     f.save(str(vpath))
+
+    MAX_FILE_SIZE = 500 * 1024 * 1024  # 500 MB
+    if vpath.stat().st_size > MAX_FILE_SIZE:
+        vpath.unlink(missing_ok=True)
+        return jsonify({"error": "Fichier trop volumineux (max 500 MB)"}), 413
 
     def _bool(key, default="false"):
         return request.form.get(key, default).lower() == "true"

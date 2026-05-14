@@ -35,6 +35,7 @@ export function SettingsPanel({ settings, onSettingsChange, activeMode }: Settin
   const ssInputRef = useRef<HTMLInputElement>(null);
   const isReddit = activeMode === 'reddit-tts' || activeMode === 'reddit-visual';
   const isVisual = activeMode === 'reddit-visual';
+  const isNormal = activeMode === 'normal';
 
   return (
     <div>
@@ -218,6 +219,26 @@ export function SettingsPanel({ settings, onSettingsChange, activeMode }: Settin
             <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform duration-300 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[22px] shadow-lg" />
           </Switch.Root>
         </div>
+
+        {/* Mute Original Audio (Normal mode only) */}
+        {isNormal && (
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <label className="text-sm text-gray-300 block mb-1">Mute Original Audio</label>
+              <p className="text-xs text-gray-500">
+                Supprime l'audio original du clip (utile pour ajouter ta propre musique).
+              </p>
+            </div>
+            <Switch.Root
+              checked={settings.muteVideo}
+              onCheckedChange={v => upd('muteVideo', v)}
+              className={`w-11 h-6 rounded-full relative transition-colors duration-300 shrink-0
+                ${settings.muteVideo ? 'bg-gradient-to-r from-cyan-500 to-fuchsia-600' : 'bg-white/10'}`}
+            >
+              <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform duration-300 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[22px] shadow-lg" />
+            </Switch.Root>
+          </div>
+        )}
 
         {/* Voice (Reddit modes) */}
         {isReddit && (

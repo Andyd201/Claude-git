@@ -19,6 +19,8 @@ export default defineConfig({
       '/status':   'http://localhost:5000',
       '/download': 'http://localhost:5000',
       '/cleanup':  'http://localhost:5000',
+      '/zip':      'http://localhost:5000',
+      '/stream':   'http://localhost:5000',
     },
   },
 })
